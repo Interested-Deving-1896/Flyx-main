@@ -1,315 +1,75 @@
-# Flyx
+[update-readmes]   Mode: rewrite — migrating to template structure...
+# Flyx-main
 
-A privacy-first streaming platform built with Next.js 16, featuring movies, TV shows, anime, live TV, live sports, and cross-device sync.
+[![Built with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/Interested-Deving-1896/Flyx-main)
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square)
-![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square)
-![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+<!-- AI:start:what-it-does -->
+_Description pending._
+<!-- AI:end:what-it-does -->
 
-## Features
+## Architecture
 
-- **Movies & TV Shows** — Browse trending content, search, and watch with multiple video providers
-- **Anime** — Hybrid TMDB + MAL system with dual providers (HiAnime + AnimeKai), sub/dub toggle, automatic episode mapping
-- **Live TV** — 850+ channels via DLHD with PoW authentication and server-side decryption
-- **Live Sports** — VIPRow integration with Casthill token auth and manifest rewriting
-- **PPV Events** — Pay-per-view streaming through residential proxy
-- **Cross-Device Sync** — Sync watchlist, continue watching, and preferences across devices
-- **Casting** — Chromecast and AirPlay for all content types including live TV
-- **Subtitles** — 29 languages via OpenSubtitles with sync adjustment and non-UTF8 encoding support
-- **TV Navigation** — Full spatial navigation for Fire TV, Android TV, and D-pad devices
-- **Copy Stream URL** — One-click copy for VLC, IINA, mpv, or any external player
-- **Admin Dashboard** — Real-time analytics, user metrics, and live activity monitoring
-- **Privacy-First** — No ads, no tracking, no PII collected
+<!-- AI:start:architecture -->
+_Architecture documentation pending._
+<!-- AI:end:architecture -->
 
-## Provider Registry
+## Install
 
-All streaming sources are managed through a unified Provider Registry with priority ordering and error isolation. A single broken provider never crashes the app.
-
-| # | Provider | Content | Method | Priority | Status |
-|---|----------|---------|--------|----------|--------|
-| 1 | PrimeSrc | Movies, TV | PrimeVid extraction via CF Worker | 10 | ✅ Enabled |
-| 2 | Flixer | Movies, TV | WASM sign + decrypt via CF Worker (hexa.su) | 10 | ✅ Enabled |
-| 3 | Uflix | Movies, TV | Multi-embed aggregator (5 servers) | 20 | ✅ Enabled |
-| 4 | HiAnime | Anime | MegaCloud extraction via CF Worker (primary) | 30 | ✅ Enabled |
-| 5 | AnimeKai | Anime | Native crypto extraction (secondary) | 35 | ✅ Enabled |
-| 6 | VidSrc | Movies, TV | Multi-embed scraping | 40 | ✅ Enabled |
-| 7 | MultiEmbed | Movies, TV | Direct HTML scraping | 50 | ❌ Disabled |
-| 8 | DLHD | Live TV | PoW auth + AES segment decryption | 100 | ✅ Enabled |
-| 9 | CDN-Live | Live TV | CDN stream extraction | 105 | ✅ Enabled |
-| 10 | VIPRow | Live Sports | Casthill token + manifest rewrite | 110 | ✅ Enabled |
-| 11 | PPV | PPV Events | Residential proxy extraction | 120 | ✅ Enabled |
-| 12 | IPTV | IPTV | Stalker portal + MAC auth | 130 | ✅ Enabled |
-
-Lower priority number = tried first. Providers are selected automatically based on content type.
-
-## Quick Start (Docker)
-
-Docker is the recommended way to run Flyx. The container runs two processes — Next.js (Node.js) on port 3000 and a Bun proxy server on port 8787. The only requirement is a free TMDB API key.
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) installed
-- A free TMDB API key from [themoviedb.org](https://www.themoviedb.org/settings/api)
-
-### Setup
-
-**Linux / Mac:**
-```bash
-chmod +x flyx.sh
-./flyx.sh
-```
-
-**Windows (PowerShell as Administrator):**
-```powershell
-.\flyx.ps1
-```
-
-That's it. The script will:
-1. Create `docker/.env` from the template and prompt for your TMDB key
-2. Auto-generate random security secrets (JWT, signing, watermark, admin)
-3. Build the Docker image and start the container
-4. Add `flyx.local` to your hosts file (requires sudo/admin)
-5. Wait for startup and print access URLs
-
-Once running, open `http://localhost` or `http://flyx.local`.
-
-### Architecture
-
-```
- Devices on LAN
-      │
-      ▼
-┌──────────┐
-│  Browser  │──── http://localhost ──────┐
-└──────────┘                            │
-                                        ▼
-              ┌──────────┐        ┌──────────┐
-              │  Flyx    │        │  Proxy   │
-              │  :3000   │        │  :8787   │
-              │ (Node.js)│        │  (Bun)   │
-              └────┬─────┘        └────┬─────┘
-                   │                   │
-              ┌────▼─────┐        Direct fetch
-              │  SQLite  │        to upstream
-              └──────────┘        CDNs & APIs
-```
-
-### Ports
-
-| Port | Service | Description |
-|------|---------|-------------|
-| 80 | Next.js | Main entry — `http://localhost` (mapped to 3000 internally) |
-| 8787 | Proxy | Stream proxy, TMDB proxy, extractors |
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `./flyx.sh` | First-time setup + start |
-| `./flyx.sh start` | Start all services |
-| `./flyx.sh stop` | Stop all services |
-| `./flyx.sh restart` | Restart everything |
-| `./flyx.sh status` | Show service status |
-| `./flyx.sh logs` | Tail all logs |
-| `./flyx.sh clean` | Stop + remove volumes |
-
-On Windows, replace `./flyx.sh` with `.\flyx.ps1`.
-
-### Environment Variables
-
-See [`docker/.env.example`](docker/.env.example) for the full list.
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_TMDB_API_KEY` | ✅ | TMDB API key (free at themoviedb.org) |
-| `TMDB_API_KEY` | ✅ | Same key, used server-side |
-| `JWT_SECRET` | Auto | Auth token signing (auto-generated) |
-| `SIGNING_SECRET` | Auto | Request signing (auto-generated) |
-| `WATERMARK_SECRET` | Auto | Watermark generation (auto-generated) |
-| `ADMIN_SECRET` | Auto | Admin panel access (auto-generated) |
-| `ENABLE_VIDSRC_PROVIDER` | No | Set `"false"` to disable VidSrc (default: enabled) |
-
-### Linux Host Networking
-
-On Linux, `flyx.sh` automatically uses `docker-compose.linux.yml` as an override, which enables host networking (`network_mode: host`) instead of port mapping. This avoids Docker's NAT overhead and lets the container bind directly to the host's network interfaces.
-
-### Troubleshooting
+<!-- Add installation instructions here. This section is yours — the AI will not modify it. -->
 
 ```bash
-# Check service status
-docker compose ps
-
-# View logs
-docker compose logs flyx
-
-# Proxy health check
-curl http://localhost:8787/health
-
-# Full rebuild from scratch
-./flyx.sh clean
-./flyx.sh start
+git clone https://github.com/Interested-Deving-1896/Flyx-main.git
+cd Flyx-main
 ```
 
-## Cloudflare Deployment (Advanced)
+## Usage
 
-For production deployment, Flyx runs on Cloudflare's edge network using Pages, Workers, and D1.
+<!-- Add usage examples here. This section is yours — the AI will not modify it. -->
 
-### Components
+## Configuration
 
-| Service | Platform | Purpose |
-|---------|----------|---------|
-| Frontend | Cloudflare Pages | Next.js app via OpenNext |
-| Stream Proxy | Cloudflare Worker | HLS proxying, CORS, provider routing |
-| DLHD Extractor | Cloudflare Worker | Live TV extraction + PoW auth |
-| CDN-Live Extractor | Cloudflare Worker | CDN live stream extraction |
-| Sync Worker | Cloudflare Worker + D1 | Cross-device sync, analytics |
-| RPI Proxy | Raspberry Pi | Residential IP for CDN bypass |
+<!-- Document configuration options here. This section is yours — the AI will not modify it. -->
 
-### Prerequisites
+## CI
 
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) installed
-- Cloudflare account with Workers and Pages enabled
-- Node.js 20+
+<!-- AI:start:ci -->
+_CI documentation pending._
+<!-- AI:end:ci -->
 
-### 1. Environment Variables
+## Mirror chain
 
-Create a `.env` file in the project root (see `.env.example`):
-
-```bash
-NEXT_PUBLIC_TMDB_API_KEY=your_tmdb_key
-NEXT_PUBLIC_CF_STREAM_PROXY_URL=https://your-proxy.workers.dev/stream
-NEXT_PUBLIC_CF_TV_PROXY_URL=https://your-proxy.workers.dev
-NEXT_PUBLIC_CF_ANALYTICS_WORKER_URL=https://your-sync.workers.dev/analytics
-NEXT_PUBLIC_CF_SYNC_URL=https://your-sync.workers.dev/sync
-NEXT_PUBLIC_DLHD_WORKER_URL=https://your-dlhd.workers.dev
-NEXT_PUBLIC_PROXY_URL=https://your-proxy.workers.dev
-NEXT_PUBLIC_CDN_LIVE_WORKER_URL=https://your-proxy.workers.dev/cdn-live
-```
-
-### 2. D1 Database Setup
-
-```bash
-# Create the D1 database
-wrangler d1 create flyx-sync
-
-# Apply migrations
-wrangler d1 execute flyx-sync --file=cf-sync-worker/schema.sql
-```
-
-Update `cf-sync-worker/wrangler.toml` with your D1 database ID.
-
-### 3. Deploy Workers
-
-```bash
-# Stream proxy worker
-cd cloudflare-proxy && wrangler deploy
-
-# DLHD extractor worker
-cd dlhd-extractor-worker && wrangler deploy
-
-# CDN-Live extractor worker
-cd cdn-live-extractor && wrangler deploy
-
-# Sync worker (with D1 binding)
-cd cf-sync-worker && wrangler deploy
-```
-
-### 4. Deploy Frontend
-
-```bash
-# Build with OpenNext for Cloudflare Pages
-npm run build
-
-# Deploy to Pages
-wrangler pages deploy .open-next/assets --project-name=flyx
-```
-
-### Cloudflare Environment Variables
-
-Set these as secrets on your Workers:
-
-```bash
-# Stream proxy worker
-wrangler secret put RPI_PROXY_URL      # Residential proxy URL
-wrangler secret put RPI_PROXY_KEY      # Residential proxy API key
-wrangler secret put SIGNING_SECRET     # Request signing secret
-
-# DLHD extractor worker
-wrangler secret put DLHD_API_KEY       # DLHD API authentication key
-
-# Sync worker
-wrangler secret put JWT_SECRET         # JWT signing secret
-wrangler secret put ADMIN_SECRET       # Admin panel secret
-```
-
-## Project Structure
+<!-- AI:start:mirror-chain -->
+This repo is maintained in [`Interested-Deving-1896/Flyx-main`](https://github.com/Interested-Deving-1896/Flyx-main) and mirrored through:
 
 ```
-flyx/
-├── app/                          # Next.js 16 app directory
-│   ├── (routes)/                 # Page routes (movies, TV, anime, live, etc.)
-│   ├── api/                      # API routes
-│   ├── components/               # React components
-│   ├── hooks/                    # Custom React hooks
-│   ├── lib/
-│   │   ├── providers/            # Provider Registry (11 providers)
-│   │   ├── services/             # Extraction logic per provider
-│   │   └── proxy-config.ts       # Proxy routing configuration
-│   ├── styles/                   # CSS modules
-│   └── utils/                    # Shared utilities
-├── cloudflare-proxy/             # Cloudflare Worker — stream proxy
-├── dlhd-extractor-worker/        # Cloudflare Worker — DLHD live TV
-├── cdn-live-extractor/           # Cloudflare Worker — CDN-Live streams
-├── cf-sync-worker/               # Cloudflare Worker + D1 — sync & analytics
-├── rpi-proxy/                    # Raspberry Pi residential proxy server
-├── docker/                       # Docker setup (Dockerfile, proxy, entrypoint)
-├── scripts/                      # Dev/debug scripts
-├── flyx.sh                       # Linux/Mac launcher
-├── flyx.ps1                      # Windows launcher
-├── docker-compose.yml            # Docker Compose config
-└── docker-compose.linux.yml      # Linux host networking override
+Interested-Deving-1896/Flyx-main  ──►  OpenOS-Project-OSP/Flyx-main  ──►  OpenOS-Project-Ecosystem-OOC/Flyx-main
 ```
 
-## Admin Dashboard
+Changes flow downstream automatically via the hourly mirror chain in
+[`fork-sync-all`](https://github.com/Interested-Deving-1896/fork-sync-all).
+Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-Deving-1896`.
+<!-- AI:end:mirror-chain -->
 
-Flyx includes a built-in admin panel at `/admin` with:
+## Contributors
 
-- Real-time user activity and stream monitoring
-- Provider health status and extraction success rates
-- User management and analytics
-- Feedback system with response tracking
+<!-- AI:start:contributors -->
+_Contributors pending._
+<!-- AI:end:contributors -->
 
-Access requires the `ADMIN_SECRET` configured in your environment.
+## Origins
 
-## Testing
+<!-- AI:start:origins -->
+_Original project — no upstream fork._
+<!-- AI:end:origins -->
 
-```bash
-# Run unit tests
-npm test
+## Resources
 
-# Test a specific provider extraction
-node scripts/quick-test.js
-
-# Test deployed DLHD worker
-node scripts/dlhd-deployed-e2e.js
-
-# Test anime extraction chain
-node scripts/test-anime-full-chain.js
-```
-
-## Tech Stack
-
-- **Frontend**: Next.js 16, React 19, TypeScript 5.9
-- **Styling**: Tailwind CSS + CSS Modules
-- **Video**: hls.js with custom loader, Chromecast/AirPlay integration
-- **Database**: SQLite (Docker) / Cloudflare D1 (production)
-- **Proxy**: Bun (Docker) / Cloudflare Workers (production)
-- **Build**: OpenNext for Cloudflare Pages deployment
-- **Residential Proxy**: Raspberry Pi with curl-impersonate for TLS fingerprinting
+<!-- AI:start:resources -->
+_No additional resource files found._
+<!-- AI:end:resources -->
 
 ## License
 
-MIT
+<!-- AI:start:license -->
+<!-- License not detected — add a LICENSE file to this repo. -->
+<!-- AI:end:license -->
